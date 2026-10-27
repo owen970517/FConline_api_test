@@ -1,4 +1,4 @@
-![API Test](https://github.com/아이디/fconline-api-test/actions/workflows/api-test.yml/badge.svg)
+![API Test](https://github.com/owen970517/FConline_api_test/actions/workflows/api-test.yml/badge.svg)
 
 # FC 온라인 Open API 테스트 자동화
 
