@@ -33,7 +33,11 @@ fconline_api_test/
 ├── .env                   # API 키, 테스트 닉네임 (Git에 올리지 않음)
 ├── .gitignore
 └── tests/
-    └── test_fconline.py   # 테스트 케이스
+    └── test_apiError.py   # 테스트 케이스
+    └── test_auth.py  
+    └── test_match.py  
+    └── test_metadata.py  
+    └── test_user.py              
 ```
 
 ## 실행 방법
