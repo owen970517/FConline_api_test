@@ -7,7 +7,7 @@ NEXON Open API 중 **FC 온라인** API를 대상으로 한 API 테스트 자동
 
 - 테스트 대상: [NEXON Open API - FC 온라인](https://openapi.nexon.com/ko/game/fconline/)
 - 테스트 케이스: 13개 (정상 3 / 경계값 4 / 예외 6)
-- 결과: 13 passed
+- 결과: 16 passed / GitHub Actions에서 push마다 자동 실행
 
 ## 기술 스택
 
@@ -95,6 +95,9 @@ API 키와 테스트 닉네임은 저장소의 GitHub Secrets(`NEXON_API_KEY`, `
 | TC-11 | 예외 | /id | 잘못된 API 키 | 400, OPENAPI00005, "The apikey is not valid." | 직접 확인 |
 | TC-12 | 예외 | /id | API 키 헤더 없음 | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
 | TC-13 | 예외 | /id | API 키 빈 문자열 | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
+| TC-14 | 교차 검증 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 항목의 `matchType`이 매치 종류 메타데이터(`matchtype`)에 존재 | 직접 확인 |
+| TC-15 | 교차 검증 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 항목의 `division`이 등급 메타데이터(`divisionId`)에 존재 | 직접 확인 |
+| TC-16 | 정상 | 메타데이터 (등급) | API 키 없이 요청 | 200, 목록이 비어 있지 않음, `divisionId`는 정수이고 중복 없음, `divisionName`은 문자열 | 직접 확인 |
 
 **테스트 데이터 전제 조건**: TC-04, TC-05는 테스트 계정이 공식 경기(`matchtype` = 50)를 **100경기 이상** 플레이한 기록이 있어야 통과합니다.
 API는 기록이 요청 개수보다 적으면 있는 만큼만 반환하고, 기록이 없으면 200과 빈 배열(`[]`)을 반환합니다.

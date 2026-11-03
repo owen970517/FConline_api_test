@@ -24,3 +24,25 @@ def ouid(client):
     data = response.json()
     return data["ouid"]
 
+@pytest.fixture(scope="session")
+def matchtype_meta(client):
+    response = client.get_meta("matchtype")
+    assert response.status_code == 200, f"매치 종류 메타데이터 조회 실패: {response.status_code} {response.text}"
+    return response.json()
+
+
+@pytest.fixture(scope="session")
+def division_meta(client):
+    response = client.get_meta("division")
+    assert response.status_code == 200, f"등급 메타데이터 조회 실패: {response.status_code} {response.text}"
+    return response.json()
+
+
+@pytest.fixture(scope="session")
+def max_divisions(client, ouid):
+    response = client.get_user_max_division(ouid)
+    assert response.status_code == 200, f"최고 등급 조회 실패: {response.status_code} {response.text}"
+    data = response.json()
+    assert len(data) > 0, "최고 등급 기록이 없는 계정입니다 (테스트 데이터 전제 조건)"
+    return data
+

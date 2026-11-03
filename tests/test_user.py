@@ -20,6 +20,13 @@ class TestUser :
         assert user['ouid'] == ouid
         assert user['nickname'] == TEST_NICKNAME
 
+    def test_최고등급의_매치종류는_메타데이터에_존재한다(self, max_divisions, matchtype_meta):
+        valid_match_types = {m["matchtype"] for m in matchtype_meta}
+        assert all(d["matchType"] in valid_match_types for d in max_divisions)
+
+    def test_최고등급의_등급값은_메타데이터에_존재한다(self, max_divisions, division_meta):
+        valid_divisions = {d["divisionId"] for d in division_meta}
+        assert all(d["division"] in valid_divisions for d in max_divisions)
 
     @pytest.mark.parametrize("nickname", ['wrong_nickname', None])
     def test_예외처리_닉네임(self, client,nickname) :

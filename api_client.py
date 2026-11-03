@@ -14,8 +14,11 @@ class FcOnlineClient:
     def get_user_basic(self, ouid:str):
         return self.session.get(f"{self.base_url}/fconline/v1/user/basic",params={"ouid" : ouid},  timeout=self.timeout)
 
-    def get_meta_data(self):
-        return self.session.get(f"{self.base_url}/static/fconline/meta/matchtype.json",  timeout=self.timeout)
+    def get_user_max_division(self,ouid:str) :
+        return self.session.get(f"{self.base_url}/fconline/v1/user/maxdivision",params={"ouid" : ouid},  timeout=self.timeout)
+
+    def get_meta(self, meta_name: str):
+        return self.session.get(f"{self.base_url}/static/fconline/meta/{meta_name}.json", timeout=self.timeout)
 
     def get_user_matches(self, ouid: str, matchtype: int, offset: int | None = None, limit: int | None = None):
         return self.session.get(f"{self.base_url}/fconline/v1/user/match", params={"ouid" : ouid , "matchtype" : matchtype , "offset" : offset , "limit" : limit} , timeout=self.timeout)
