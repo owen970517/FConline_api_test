@@ -6,8 +6,8 @@ NEXON Open API 중 **FC 온라인** API를 대상으로 한 API 테스트 자동
 테스트 케이스를 먼저 설계하고, 문서와 실제 동작을 직접 호출해 비교한 뒤 Python + pytest로 자동화했습니다.
 
 - 테스트 대상: [NEXON Open API - FC 온라인](https://openapi.nexon.com/ko/game/fconline/)
-- 테스트 케이스: 13개 (정상 3 / 경계값 4 / 예외 6)
-- 결과: 16 passed / GitHub Actions에서 push마다 자동 실행
+- 테스트 케이스: 25개 (정상 4 / 경계값 7 / 예외 8 / 교차 검증 3 / 규칙 검증 3)
+- 결과: 25 passed / GitHub Actions에서 push마다 자동 실행
 
 ## 기술 스택
 
@@ -98,11 +98,23 @@ API 키와 테스트 닉네임은 저장소의 GitHub Secrets(`NEXON_API_KEY`, `
 | TC-14 | 교차 검증 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 항목의 `matchType`이 매치 종류 메타데이터(`matchtype`)에 존재 | 직접 확인 |
 | TC-15 | 교차 검증 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 항목의 `division`이 등급 메타데이터(`divisionId`)에 존재 | 직접 확인 |
 | TC-16 | 정상 | 메타데이터 (등급) | API 키 없이 요청 | 200, 목록이 비어 있지 않음, `divisionId`는 정수이고 중복 없음, `divisionName`은 문자열 | 직접 확인 |
+| TC-17 | 규칙 검증 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 `achievementDate`가 날짜 형식이고, 현재 시각(한국 시간) 이후가 아님 | 직접 확인 |
+| TC-18 | 교차 검증 | /user/trade | `tradetype` = buy, `limit` = 5 | 모든 거래의 `spid`가 선수 메타데이터(`id`)에 존재 | 직접 확인 |
+| TC-19 | 규칙 검증 | /user/trade | `tradetype` = buy, `limit` = 100 | `tradeDate` 기준 최신 거래부터 내림차순 정렬 | 문서, 직접 확인 |
+| TC-20 | 규칙 검증 | /user/trade | `tradetype` = sell, `limit` = 100 | `tradeDate` 기준 최신 거래부터 내림차순 정렬 | 문서, 직접 확인 |
+| TC-21 | 경계값 | /user/trade | `tradetype` = buy, `limit` = 0 | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
+| TC-22 | 경계값 | /user/trade | `tradetype` = buy, `limit` = 101 | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
+| TC-23 | 경계값 | /user/trade | `tradetype` = buy, `offset` = -1 | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
+| TC-24 | 예외 | /user/trade | 허용하지 않는 `tradetype` | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
+| TC-25 | 예외 | /user/trade | `tradetype` 파라미터 없음 | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
 
 **테스트 데이터 전제 조건**: TC-04, TC-05는 테스트 계정이 공식 경기(`matchtype` = 50)를 **100경기 이상** 플레이한 기록이 있어야 통과합니다.
 API는 기록이 요청 개수보다 적으면 있는 만큼만 반환하고, 기록이 없으면 200과 빈 배열(`[]`)을 반환합니다.
 따라서 기록이 적은 계정에서는 API가 정상이어도 "정확히 100개"를 기대하는 TC-05가 실패합니다.
 "100개 이하"로 검증하면 서버가 `limit`을 무시하고 더 적게 반환해도 통과하므로, `limit` 동작을 확실히 검증하기 위해 "정확히 100개"를 기대값으로 정했습니다.
+TC-14, TC-15, TC-17은 테스트 계정에 최고 등급 기록이 하나 이상 있어야 합니다. 기록이 없으면 빈 목록이 반환되어 검증할 대상이 없으므로, 이 경우 준비 단계(`max_divisions` fixture)에서 원인을 알려 주며 중단되도록 했습니다.
+TC-17은 응답의 시각에 시간대 표시가 없어 **한국 시간(UTC+9)으로 간주**하고 비교합니다. GitHub Actions 서버는 UTC로 동작하므로, 현재 시각도 한국 시간으로 맞춰 최근 기록이 미래로 잘못 판정되지 않도록 했습니다.
+TC-18 ~ TC-25(거래 기록)는 `TEST_NICKNAME` 계정이 아니라 **API 키를 발급받은 계정**의 기록을 조회합니다. TC-18은 구매 기록 1건 이상, TC-19·TC-20은 구매·판매 기록이 각각 2건 이상 있어야 하며, 부족하면 원인을 알려 주며 실패합니다.
 
 ## 설계 포인트
 
@@ -153,3 +165,13 @@ Postman으로 "키 없음"을 확인했을 때는 OPENAPI00005가 나왔지만, 
 실패한 테스트를 지우는 대신 `response.request.headers`로 실제 전송 헤더를 확인했고, 자동화 테스트는 키 헤더 없이 요청했음을 확인했습니다.
 이후 Postman에서 키 헤더를 확실히 빼고 다시 요청한 결과 동일하게 OPENAPI00004가 반환되어, 처음의 수동 확인이 잘못되었음을 확인했습니다.
 실제 동작(00004)을 기대값으로 정리했고, 수동 확인 결과도 실제 요청 내용을 검증한 뒤 기록하는 계기가 되었습니다.
+
+**6. 연속 호출 시 호출량 초과(429)로 테스트가 실패**
+연속으로 자주 `pytest -v`로 전체를 실행하면 25개 중 16개만 통과하고 6개는 실패, 3개는 에러가 났습니다. 실패 메시지는 모두 `assert 429 == 200`이었고, 에러 코드는 OPENAPI00007이었습니다.
+실행할 때마다 실패하는 테스트가 바뀌었고, 하나씩 따로 실행하면 통과했습니다. 테스트가 쉬지 않고 API를 호출하면서 키의 호출 한도를 넘은 것으로 보고, 서버 결함이 아닌 실행 환경 문제로 분류했습니다. 에러 3개는 fixture가 준비 단계에서 429를 받아 테스트가 실행되지 못한 경우였습니다.
+
+테스트마다 `sleep`을 넣으면 테스트가 늘어날 때마다 같은 코드를 반복해야 합니다. 모든 요청은 `FcOnlineClient`를 거치므로 클라이언트 한 곳에서 처리했습니다.
+요청 사이에는 최소 0.25초 간격을 두고, 429가 오면 `Retry-After` 헤더만큼(없으면 1초, 2초, 4초) 기다렸다가 최대 3번까지 다시 요청합니다. 그래도 429면 `RateLimitError`를 발생시켜 호출 한도 문제라는 걸 바로 알 수 있게 했습니다.
+
+수정 후에는 테스트 코드를 바꾸지 않고도 25개가 모두 통과했습니다(약 9초).
+다만 하루 호출 한도를 다 쓴 경우에는 재시도해도 소용이 없습니다. 또 로컬과 GitHub Actions가 같은 키를 쓰면 한도를 함께 쓴다는 점은 여전히 주의해야 합니다.

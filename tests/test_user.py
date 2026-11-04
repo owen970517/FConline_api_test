@@ -2,6 +2,9 @@ import pytest
 
 from conftest import TEST_NICKNAME
 from tests.apiError import assert_api_error
+from datetime import datetime, timedelta, timezone
+
+KST = timezone(timedelta(hours=9))
 
 class TestUser :
     def test_유저_ouid_조회(self,client) :
@@ -28,6 +31,18 @@ class TestUser :
         valid_divisions = {d["divisionId"] for d in division_meta}
         assert all(d["division"] in valid_divisions for d in max_divisions)
 
+    def test_최고등급_달성_정상_날짜_확인(self,max_divisions):
+        now = datetime.now(KST)
+        for d in max_divisions:
+            date_str = d["achievementDate"]
+            try:
+                achieved = datetime.fromisoformat(date_str)
+            except (TypeError, ValueError):
+                pytest.fail(f"매치 종류 {d['matchType']}의 달성일 형식이 잘못되었습니다: {date_str!r}") 
+
+            achieved = achieved.replace(tzinfo=KST) 
+            assert achieved <= now, f"매치 종류 {d['matchType']}의 달성일이 미래입니다: {date_str}"
+            
     @pytest.mark.parametrize("nickname", ['wrong_nickname', None])
     def test_예외처리_닉네임(self, client,nickname) :
         response = client.get_ouid(nickname)

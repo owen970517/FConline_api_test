@@ -37,6 +37,11 @@ def division_meta(client):
     assert response.status_code == 200, f"등급 메타데이터 조회 실패: {response.status_code} {response.text}"
     return response.json()
 
+@pytest.fixture(scope="session")
+def spid_meta(client):
+    response = client.get_meta("spid")
+    assert response.status_code == 200, f"선수 메타데이터 조회 실패: {response.status_code} {response.text}"
+    return response.json()
 
 @pytest.fixture(scope="session")
 def max_divisions(client, ouid):
