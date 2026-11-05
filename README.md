@@ -6,8 +6,8 @@ NEXON Open API 중 **FC 온라인** API를 대상으로 한 API 테스트 자동
 테스트 케이스를 먼저 설계하고, 문서와 실제 동작을 직접 호출해 비교한 뒤 Python + pytest로 자동화했습니다.
 
 - 테스트 대상: [NEXON Open API - FC 온라인](https://openapi.nexon.com/ko/game/fconline/)
-- 테스트 케이스: 25개 (정상 4 / 경계값 7 / 예외 8 / 교차 검증 3 / 규칙 검증 3)
-- 결과: 25 passed / GitHub Actions에서 push마다 자동 실행
+- 테스트 케이스: 34개 (정상 5 / 경계값 7 / 예외 11 / 교차 검증 4 / 규칙 검증 7)
+- 결과: 34 passed / GitHub Actions에서 push마다 자동 실행
 
 ## 기술 스택
 
@@ -33,11 +33,13 @@ fconline_api_test/
 ├── .env                   # API 키, 테스트 닉네임 (Git에 올리지 않음)
 ├── .gitignore
 └── tests/
-    └── test_apiError.py   # 테스트 케이스
-    └── test_auth.py  
-    └── test_match.py  
-    └── test_metadata.py  
-    └── test_user.py              
+    ├── apiError.py           # 에러 응답 공통 검사 함수 (assert_api_error)
+    ├── test_auth.py          # API 키
+    ├── test_match.py         # 매치 기록 조회
+    ├── test_match_detail.py  # 매치 상세 조회
+    ├── test_metadata.py      # 메타데이터
+    ├── test_trade.py         # 거래 기록 조회
+    └── test_user.py          # 유저 정보, 최고 등급 조회
 ```
 
 ## 실행 방법
@@ -107,6 +109,15 @@ API 키와 테스트 닉네임은 저장소의 GitHub Secrets(`NEXON_API_KEY`, `
 | TC-23 | 경계값 | /user/trade | `tradetype` = buy, `offset` = -1 | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
 | TC-24 | 예외 | /user/trade | 허용하지 않는 `tradetype` | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
 | TC-25 | 예외 | /user/trade | `tradetype` 파라미터 없음 | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
+| TC-26 | 정상 | /match-detail | 최근 공식 경기의 `matchid` | 200, `matchId`가 요청 값과 같음, `matchType`이 50, 참가자 2명 중 조회한 유저의 `ouid`가 있음 | 직접 확인 |
+| TC-27 | 규칙 검증 | /match-detail | 최근 공식 경기 10개 | 모든 `matchDate`가 날짜 형식이고, 현재 시각(한국 시간) 이후가 아님 | 직접 확인 |
+| TC-28 | 규칙 검증 | /match-detail | 최근 공식 경기 중 정상 종료(`matchEndType` = 0) 경기 | `matchResult`가 득점(`goalTotalDisplay`)과 일치. 득점이 같으면 승부차기(`shootOutScore`)로 승/패, 승부차기를 하지 않았으면 무 | 직접 확인 |
+| TC-29 | 규칙 검증 | /match-detail | 최근 공식 경기 중 몰수 경기 | 한쪽이 몰수승(`matchEndType` = 1)·다른 쪽이 몰수패(2), 몰수승은 "승"·몰수패는 "패" | 문서, 직접 확인 |
+| TC-30 | 규칙 검증 | /match-detail | 최근 공식 경기 중 정상 종료 경기 | 슈팅 상세(`shootDetail`) 개수가 `shootTotal`과 같고, 선수별 골 합계가 `goalTotal`과 같음 | 직접 확인 |
+| TC-31 | 교차 검증 | /match-detail | 최근 공식 경기 10개 | `matchType`이 매치 종류 메타데이터에, 참가자의 `division`이 등급 메타데이터에 존재 | 직접 확인 |
+| TC-32 | 예외 | /match-detail | 형식이 잘못된 `matchid` | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
+| TC-33 | 예외 | /match-detail | 형식은 맞지만 존재하지 않는 `matchid` | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
+| TC-34 | 예외 | /match-detail | `matchid` 파라미터 없음 | 400, OPENAPI00004, "Please input valid parameter" | 직접 확인 |
 
 **테스트 데이터 전제 조건**: TC-04, TC-05는 테스트 계정이 공식 경기(`matchtype` = 50)를 **100경기 이상** 플레이한 기록이 있어야 통과합니다.
 API는 기록이 요청 개수보다 적으면 있는 만큼만 반환하고, 기록이 없으면 200과 빈 배열(`[]`)을 반환합니다.
@@ -115,6 +126,8 @@ API는 기록이 요청 개수보다 적으면 있는 만큼만 반환하고, �
 TC-14, TC-15, TC-17은 테스트 계정에 최고 등급 기록이 하나 이상 있어야 합니다. 기록이 없으면 빈 목록이 반환되어 검증할 대상이 없으므로, 이 경우 준비 단계(`max_divisions` fixture)에서 원인을 알려 주며 중단되도록 했습니다.
 TC-17은 응답의 시각에 시간대 표시가 없어 **한국 시간(UTC+9)으로 간주**하고 비교합니다. GitHub Actions 서버는 UTC로 동작하므로, 현재 시각도 한국 시간으로 맞춰 최근 기록이 미래로 잘못 판정되지 않도록 했습니다.
 TC-18 ~ TC-25(거래 기록)는 `TEST_NICKNAME` 계정이 아니라 **API 키를 발급받은 계정**의 기록을 조회합니다. TC-18은 구매 기록 1건 이상, TC-19·TC-20은 구매·판매 기록이 각각 2건 이상 있어야 하며, 부족하면 원인을 알려 주며 실패합니다.
+TC-26 ~ TC-31(매치 상세)은 테스트 계정의 최근 공식 경기 10개를 한 번만 조회해 함께 사용합니다. TC-28, TC-30은 그중 정상 종료된 경기가 1개 이상 있어야 하며, 없으면 원인을 알려 주며 실패합니다.
+몰수 경기는 진 쪽 기록이 비어 있을(`null`) 수 있어 TC-28, TC-30에서 제외하고 TC-29에서 따로 검증합니다. 몰수 경기는 드물게 발생하므로, 최근 10경기 안에 없으면 TC-29는 실패가 아닌 건너뜀(skip)으로 처리됩니다.
 
 ## 설계 포인트
 
@@ -175,3 +188,8 @@ Postman으로 "키 없음"을 확인했을 때는 OPENAPI00005가 나왔지만, 
 
 수정 후에는 테스트 코드를 바꾸지 않고도 25개가 모두 통과했습니다(약 9초).
 다만 하루 호출 한도를 다 쓴 경우에는 재시도해도 소용이 없습니다. 또 로컬과 GitHub Actions가 같은 키를 쓰면 한도를 함께 쓴다는 점은 여전히 주의해야 합니다.
+
+**7. 몰수패 쪽 기록은 경기마다 다르게 내려온다**
+몰수 경기(`matchEndType` 1·2)를 확인하던 중, 몰수패 쪽 기록이 경기마다 다르게 내려오는 것을 발견했습니다. 최근 100경기 중 몰수 경기 3개를 비교한 결과, 2경기는 몰수패 쪽 슈팅·패스·점유율이 모두 `null`이고 선수 목록도 비어 있었지만, 1경기는 정상적으로 기록이 남아 있었습니다. 명세에는 몰수 시 기록이 어떻게 내려오는지 설명이 없습니다.
+명세의 `goalTime` 규칙으로 이긴 쪽의 마지막 슈팅 시간을 계산해 보니, 기록이 남은 경기는 전반 22분이었고 `null`인 경기는 후반 54분, 연장 전반 103분이었습니다. 몰수된 시점에 따라 기록 저장 여부가 달라지는 것으로 보이지만, 표본이 3경기뿐이고 실제 몰수 시점은 응답에 없어 확정하지는 못했습니다.
+이 때문에 몰수 경기는 승패 규칙 검증 테스트(TC-28, TC-30)에서 제외하고, 몰수 결과만 따로 검증(TC-29)합니다.

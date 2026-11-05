@@ -61,3 +61,6 @@ class FcOnlineClient:
 
     def get_user_matches(self, ouid: str, matchtype: int, offset: int | None = None, limit: int | None = None):
         return self._get("/fconline/v1/user/match", params={"ouid": ouid, "matchtype": matchtype, "offset": offset, "limit": limit})
+
+    def get_match_detail(self, matchid: str):
+        return self._get("/fconline/v1/match-detail", params={"matchid": matchid})
