@@ -8,7 +8,7 @@ NEXON Open API 중 **FC 온라인** API를 대상으로 한 API 테스트 자동
 - 테스트 대상: [NEXON Open API - FC 온라인](https://openapi.nexon.com/ko/game/fconline/)
 - 테스트 케이스: 34개 (정상 5 / 경계값 7 / 예외 11 / 교차 검증 4 / 규칙 검증 7)
 - 결과: 34 passed / GitHub Actions에서 push마다 자동 실행
-    ㄴ 최근 전적 중 "몰수 경기"가 존재하지 않을 경우 33 passed, 1 skipped
+    - 최근 전적 중 "몰수 경기"가 존재하지 않을 경우 33 passed, 1 skipped
 
 ## 기술 스택
 
