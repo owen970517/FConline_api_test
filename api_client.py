@@ -1,3 +1,4 @@
+import random
 import time
 
 import requests
@@ -35,8 +36,7 @@ class FcOnlineClient:
             if response.status_code != 429:
                 return response
             if attempt < self.max_retries:
-                # 서버가 Retry-After 헤더를 보내지 않으므로 1초, 2초, 4초로 늘려 가며 기다립니다.
-                time.sleep(2 ** attempt)
+                time.sleep(2 ** attempt + random.uniform(0, 1))
         raise RateLimitError(
             f"호출 한도 초과: {self.max_retries}번 재시도 후에도 429를 받았습니다. "
             f"하루 호출 한도를 모두 썼을 수 있습니다. ({path}) {response.text}"
