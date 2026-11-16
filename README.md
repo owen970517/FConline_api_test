@@ -7,7 +7,7 @@ NEXON Open API 중 **FC 온라인** API를 대상으로 한 API 테스트 자동
 
 - 테스트 대상: [NEXON Open API - FC 온라인](https://openapi.nexon.com/ko/game/fconline/)
 - 테스트 케이스: 34개 (정상 5 / 경계값 7 / 예외 11 / 교차 검증 4 / 규칙 검증 7)
-- 결과: 34 passed / GitHub Actions에서 push마다 자동 실행
+- 결과: 34 passed / GitHub Actions에서 push마다, 그리고 매일 자동 실행
     - 최근 전적 중 "몰수 경기"가 존재하지 않을 경우 33 passed, 1 skipped
 
 ## 기술 스택
@@ -76,6 +76,11 @@ pytest -v -k 경계값             # 이름으로 골라 실행
 ### 4. 자동 실행 (GitHub Actions)
 
 `main` 브랜치에 push하거나 PR을 열면 GitHub Actions에서 테스트가 자동으로 실행됩니다.
+코드를 수정하지 않아도 API 동작이 바뀔 수 있으므로, 매일 한국 시간 오전 9시 18분에도 정기 실행합니다.
+- GitHub Actions 문서에서 매시 정각에 정기 실행이 몰려 시작이 늦어지거나 누락될 수 있다고 안내하여, 정각을 피해 18분으로 정했습니다.
+- 게임 정기 점검이 있는 목요일은 점검 시간이 매주 달라 제외했습니다. cron은 기본적으로 UTC 기준이라 `timezone: "Asia/Seoul"`로 한국 시간을 지정해, 시각과 요일 모두 한국 시간으로 계산되게 했습니다.
+- 같은 API 키의 호출 한도를 공유하므로 `concurrency`로 테스트가 동시에 실행되지 않게 하고, API 응답이 멈추는 경우에 대비해 실행 시간을 10분으로 제한했습니다.
+
 API 키와 테스트 닉네임은 저장소의 GitHub Secrets(`NEXON_API_KEY`, `TEST_NICKNAME`)에 등록해 사용하며,
 코드는 수정하지 않고 실행 환경만 바뀌어도 같은 테스트가 동작합니다.
 
