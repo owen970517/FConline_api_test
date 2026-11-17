@@ -90,42 +90,64 @@ API 키와 테스트 닉네임은 GitHub Secrets(`NEXON_API_KEY`, `TEST_NICKNAME
 
 기대 결과는 모두 Postman과 테스트 코드로 실제 응답을 확인한 값입니다.
 
-| ID | 구분 | API | 요청 조건 | 기대 결과 |
-|---|---|---|---|---|
-| TC-01 | 정&#8288;상 | /id | 존재하는 닉네임 | 200, `ouid`가 문자열로 존재 |
-| TC-02 | 정&#8288;상 | /user/basic | TC-01의 `ouid` | 200, `ouid`·`nickname`은 문자열, `level`은 1 이상의 정수, `ouid`와 `nickname`이 요청 값과 같음 |
-| TC-03 | 정&#8288;상 | 메타데이터 (매치 종류) | API 키 없이 요청 | 200, 목록이 비어 있지 않음, `matchtype`은 정수·`desc`는 문자열 |
-| TC-04 | 경&#8288;계&#8288;값 | /user/match | `limit` = 1 | 200, 결과 1개 |
-| TC-05 | 경&#8288;계&#8288;값 | /user/match | `limit` = 100 | 200, 결과 100개 |
-| TC-06 | 경&#8288;계&#8288;값 | /user/match | `limit` = 0 | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-07 | 경&#8288;계&#8288;값 | /user/match | `limit` = 101 | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-08 | 예&#8288;외 | /id | 존재하지 않는 닉네임 | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-09 | 예&#8288;외 | /id | `nickname` 파라미터 없음 | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-10 | 예&#8288;외 | /user/basic | 잘못된 `ouid` | 400, OPENAPI00003, "Please input valid id" |
-| TC-11 | 예&#8288;외 | /id | 잘못된 API 키 | 400, OPENAPI00005, "The apikey is not valid." |
-| TC-12 | 예&#8288;외 | /id | API 키 헤더 없음 | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-13 | 예&#8288;외 | /id | API 키 빈 문자열 | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-14 | 교&#8288;차&#8288; &#8288;검&#8288;증 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 항목의 `matchType`이 매치 종류 메타데이터(`matchtype`)에 존재 |
-| TC-15 | 교&#8288;차&#8288; &#8288;검&#8288;증 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 항목의 `division`이 등급 메타데이터(`divisionId`)에 존재 |
-| TC-16 | 정&#8288;상 | 메타데이터 (등급) | API 키 없이 요청 | 200, 목록이 비어 있지 않음, `divisionId`는 정수이고 중복 없음, `divisionName`은 문자열 |
-| TC-17 | 규&#8288;칙&#8288; &#8288;검&#8288;증 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 `achievementDate`가 날짜 형식이고, 현재 시각(한국 시간) 이후가 아님 |
-| TC-18 | 교&#8288;차&#8288; &#8288;검&#8288;증 | /user/trade | `tradetype` = buy, `limit` = 5 | 모든 거래의 `spid`가 선수 메타데이터(`id`)에 존재 |
-| TC-19 | 규&#8288;칙&#8288; &#8288;검&#8288;증 | /user/trade | `tradetype` = buy, `limit` = 100 | `tradeDate` 기준 최신 거래부터 내림차순 정렬 |
-| TC-20 | 규&#8288;칙&#8288; &#8288;검&#8288;증 | /user/trade | `tradetype` = sell, `limit` = 100 | `tradeDate` 기준 최신 거래부터 내림차순 정렬 |
-| TC-21 | 경&#8288;계&#8288;값 | /user/trade | `tradetype` = buy, `limit` = 0 | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-22 | 경&#8288;계&#8288;값 | /user/trade | `tradetype` = buy, `limit` = 101 | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-23 | 경&#8288;계&#8288;값 | /user/trade | `tradetype` = buy, `offset` = -1 | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-24 | 예&#8288;외 | /user/trade | 허용하지 않는 `tradetype` | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-25 | 예&#8288;외 | /user/trade | `tradetype` 파라미터 없음 | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-26 | 정&#8288;상 | /match-detail | 최근 공식 경기의 `matchid` | 200, `matchId`가 요청 값과 같음, `matchType`이 50, 참가자 2명 중 조회한 유저의 `ouid`가 있음 |
-| TC-27 | 규&#8288;칙&#8288; &#8288;검&#8288;증 | /match-detail | 최근 공식 경기 10개 | 모든 `matchDate`가 날짜 형식이고, 현재 시각(한국 시간) 이후가 아님 |
-| TC-28 | 규&#8288;칙&#8288; &#8288;검&#8288;증 | /match-detail | 최근 공식 경기 중 정상 종료(`matchEndType` = 0) 경기 | `matchResult`가 득점(`goalTotalDisplay`)과 일치. 득점이 같으면 승부차기(`shootOutScore`)로 승/패, 승부차기를 하지 않았으면 무 |
-| TC-29 | 규&#8288;칙&#8288; &#8288;검&#8288;증 | /match-detail | 최근 공식 경기 중 몰수 경기 | 한쪽이 몰수승(`matchEndType` = 1)·다른 쪽이 몰수패(2), 몰수승은 "승"·몰수패는 "패" |
-| TC-30 | 규&#8288;칙&#8288; &#8288;검&#8288;증 | /match-detail | 최근 공식 경기 중 정상 종료 경기 | 슈팅 상세(`shootDetail`) 개수가 `shootTotal`과 같고, 선수별 골 합계가 `goalTotal`과 같음 |
-| TC-31 | 교&#8288;차&#8288; &#8288;검&#8288;증 | /match-detail | 최근 공식 경기 10개 | `matchType`이 매치 종류 메타데이터에, 참가자의 `division`이 등급 메타데이터에 존재 |
-| TC-32 | 예&#8288;외 | /match-detail | 형식이 잘못된 `matchid` | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-33 | 예&#8288;외 | /match-detail | 형식은 맞지만 존재하지 않는 `matchid` | 400, OPENAPI00004, "Please input valid parameter" |
-| TC-34 | 예&#8288;외 | /match-detail | `matchid` 파라미터 없음 | 400, OPENAPI00004, "Please input valid parameter" |
+### 정상 (5개)
+
+| ID | API | 요청 조건 | 기대 결과 |
+|---|---|---|---|
+| TC-&#8288;01 | /id | 존재하는 닉네임 | 200, `ouid`가 문자열로 존재 |
+| TC-&#8288;02 | /user/basic | TC-01의 `ouid` | 200, `ouid`·`nickname`은 문자열, `level`은 1 이상의 정수, `ouid`와 `nickname`이 요청 값과 같음 |
+| TC-&#8288;03 | 메타데이터 (매치 종류) | API 키 없이 요청 | 200, 목록이 비어 있지 않음, `matchtype`은 정수·`desc`는 문자열 |
+| TC-&#8288;16 | 메타데이터 (등급) | API 키 없이 요청 | 200, 목록이 비어 있지 않음, `divisionId`는 정수이고 중복 없음, `divisionName`은 문자열 |
+| TC-&#8288;26 | /match-detail | 최근 공식 경기의 `matchid` | 200, `matchId`가 요청 값과 같음, `matchType`이 50, 참가자 2명 중 조회한 유저의 `ouid`가 있음 |
+
+### 경계값 (7개)
+
+| ID | API | 요청 조건 | 기대 결과 |
+|---|---|---|---|
+| TC-&#8288;04 | /user/match | `limit` = 1 | 200, 결과 1개 |
+| TC-&#8288;05 | /user/match | `limit` = 100 | 200, 결과 100개 |
+| TC-&#8288;06 | /user/match | `limit` = 0 | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;07 | /user/match | `limit` = 101 | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;21 | /user/trade | `tradetype` = buy, `limit` = 0 | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;22 | /user/trade | `tradetype` = buy, `limit` = 101 | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;23 | /user/trade | `tradetype` = buy, `offset` = -1 | 400, OPENAPI00004, "Please input valid parameter" |
+
+### 예외 (11개)
+
+| ID | API | 요청 조건 | 기대 결과 |
+|---|---|---|---|
+| TC-&#8288;08 | /id | 존재하지 않는 닉네임 | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;09 | /id | `nickname` 파라미터 없음 | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;10 | /user/basic | 잘못된 `ouid` | 400, OPENAPI00003, "Please input valid id" |
+| TC-&#8288;11 | /id | 잘못된 API 키 | 400, OPENAPI00005, "The apikey is not valid." |
+| TC-&#8288;12 | /id | API 키 헤더 없음 | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;13 | /id | API 키 빈 문자열 | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;24 | /user/trade | 허용하지 않는 `tradetype` | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;25 | /user/trade | `tradetype` 파라미터 없음 | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;32 | /match-detail | 형식이 잘못된 `matchid` | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;33 | /match-detail | 형식은 맞지만 존재하지 않는 `matchid` | 400, OPENAPI00004, "Please input valid parameter" |
+| TC-&#8288;34 | /match-detail | `matchid` 파라미터 없음 | 400, OPENAPI00004, "Please input valid parameter" |
+
+### 교차 검증 (4개)
+
+| ID | API | 요청 조건 | 기대 결과 |
+|---|---|---|---|
+| TC-&#8288;14 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 항목의 `matchType`이 매치 종류 메타데이터(`matchtype`)에 존재 |
+| TC-&#8288;15 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 항목의 `division`이 등급 메타데이터(`divisionId`)에 존재 |
+| TC-&#8288;18 | /user/trade | `tradetype` = buy, `limit` = 5 | 모든 거래의 `spid`가 선수 메타데이터(`id`)에 존재 |
+| TC-&#8288;31 | /match-detail | 최근 공식 경기 10개 | `matchType`이 매치 종류 메타데이터에, 참가자의 `division`이 등급 메타데이터에 존재 |
+
+### 규칙 검증 (7개)
+
+| ID | API | 요청 조건 | 기대 결과 |
+|---|---|---|---|
+| TC-&#8288;17 | /user/maxdivision | 최고 등급 기록이 있는 계정의 `ouid` | 모든 `achievementDate`가 날짜 형식이고, 현재 시각(한국 시간) 이후가 아님 |
+| TC-&#8288;19 | /user/trade | `tradetype` = buy, `limit` = 100 | `tradeDate` 기준 최신 거래부터 내림차순 정렬 |
+| TC-&#8288;20 | /user/trade | `tradetype` = sell, `limit` = 100 | `tradeDate` 기준 최신 거래부터 내림차순 정렬 |
+| TC-&#8288;27 | /match-detail | 최근 공식 경기 10개 | 모든 `matchDate`가 날짜 형식이고, 현재 시각(한국 시간) 이후가 아님 |
+| TC-&#8288;28 | /match-detail | 최근 공식 경기 중 정상 종료(`matchEndType` = 0) 경기 | `matchResult`가 득점(`goalTotalDisplay`)과 일치. 득점이 같으면 승부차기(`shootOutScore`)로 승/패, 승부차기를 하지 않았으면 무 |
+| TC-&#8288;29 | /match-detail | 최근 공식 경기 중 몰수 경기 | 한쪽이 몰수승(`matchEndType` = 1)·다른 쪽이 몰수패(2), 몰수승은 "승"·몰수패는 "패" |
+| TC-&#8288;30 | /match-detail | 최근 공식 경기 중 정상 종료 경기 | 슈팅 상세(`shootDetail`) 개수가 `shootTotal`과 같고, 선수별 골 합계가 `goalTotal`과 같음 |
 
 ### 테스트 데이터 전제 조건
 
